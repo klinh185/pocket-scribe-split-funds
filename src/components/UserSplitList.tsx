@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Plus, X } from 'lucide-react';
 
 interface User {
   id: string;
@@ -21,6 +22,7 @@ const UserSplitList = ({ totalAmount, isEqualSplit, onEqualSplitChange }: UserSp
     { id: '1', name: 'Kali', amount: 0 },
     { id: '2', name: 'HMinh', amount: 0 }
   ]);
+  const [newPersonName, setNewPersonName] = useState('');
 
   useEffect(() => {
     if (isEqualSplit && users.length > 0) {
@@ -37,6 +39,42 @@ const UserSplitList = ({ totalAmount, isEqualSplit, onEqualSplitChange }: UserSp
         user.id === userId ? { ...user, amount } : user
       )
     );
+  };
+
+  const handleAddPerson = () => {
+    if (newPersonName.trim()) {
+      const newUser: User = {
+        id: Date.now().toString(),
+        name: newPersonName.trim(),
+        amount: isEqualSplit ? totalAmount / (users.length + 1) : 0
+      };
+      setUsers(prevUsers => [...prevUsers, newUser]);
+      setNewPersonName('');
+      
+      // Recalculate equal split if enabled
+      if (isEqualSplit) {
+        const splitAmount = totalAmount / (users.length + 1);
+        setUsers(prevUsers => 
+          prevUsers.map(user => ({ ...user, amount: splitAmount }))
+        );
+      }
+    }
+  };
+
+  const handleRemovePerson = (userId: string) => {
+    if (users.length > 1) {
+      setUsers(prevUsers => {
+        const filteredUsers = prevUsers.filter(user => user.id !== userId);
+        
+        // Recalculate equal split if enabled
+        if (isEqualSplit && filteredUsers.length > 0) {
+          const splitAmount = totalAmount / filteredUsers.length;
+          return filteredUsers.map(user => ({ ...user, amount: splitAmount }));
+        }
+        
+        return filteredUsers;
+      });
+    }
   };
 
   const getInitials = (name: string) => {
@@ -85,12 +123,39 @@ const UserSplitList = ({ totalAmount, isEqualSplit, onEqualSplitChange }: UserSp
                 step="0.01"
               />
             </div>
+            
+            {users.length > 1 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleRemovePerson(user.id)}
+                className="w-6 h-6 p-0 text-gray-400 hover:text-red-500"
+              >
+                <X size={12} />
+              </Button>
+            )}
           </div>
         ))}
-      </div>
-
-      <div className="text-xs text-gray-500 text-center">
-        Total distributed: ₫{users.reduce((sum, user) => sum + user.amount, 0).toFixed(2)}
+        
+        {/* Add Person Input */}
+        <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+          <Input
+            type="text"
+            placeholder="Add person..."
+            value={newPersonName}
+            onChange={(e) => setNewPersonName(e.target.value)}
+            className="flex-1 text-sm h-8 bg-white border-gray-300"
+            onKeyPress={(e) => e.key === 'Enter' && handleAddPerson()}
+          />
+          <Button
+            onClick={handleAddPerson}
+            disabled={!newPersonName.trim()}
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 h-8"
+          >
+            <Plus size={14} />
+          </Button>
+        </div>
       </div>
     </div>
   );
