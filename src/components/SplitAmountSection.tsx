@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Plus, X } from 'lucide-react';
 
 interface Person {
@@ -22,6 +22,10 @@ const SplitAmountSection = ({ onAmountYouOweChange, onAmountOwedToYouChange }: S
   const [peopleWhoOweYou, setPeopleWhoOweYou] = useState<Person[]>([]);
   const [newPersonNameYouOwe, setNewPersonNameYouOwe] = useState('');
   const [newPersonNameOwedToYou, setNewPersonNameOwedToYou] = useState('');
+  const [amountYouOweTotal, setAmountYouOweTotal] = useState(0);
+  const [amountOwedToYouTotal, setAmountOwedToYouTotal] = useState(0);
+  const [equallyYouOwe, setEquallyYouOwe] = useState<string>('');
+  const [equallyOwedToYou, setEquallyOwedToYou] = useState<string>('');
 
   const calculateTotal = (people: Person[]) => {
     return people.reduce((sum, person) => sum + person.amount, 0);
@@ -30,6 +34,54 @@ const SplitAmountSection = ({ onAmountYouOweChange, onAmountOwedToYouChange }: S
   const updateTotals = (newPeopleYouOwe: Person[], newPeopleWhoOweYou: Person[]) => {
     onAmountYouOweChange(calculateTotal(newPeopleYouOwe));
     onAmountOwedToYouChange(calculateTotal(newPeopleWhoOweYou));
+  };
+
+  const distributeEqually = (totalAmount: number, people: Person[], isYouOwe: boolean) => {
+    if (people.length === 0) return people;
+    
+    const amountPerPerson = totalAmount / people.length;
+    const updatedPeople = people.map(person => ({
+      ...person,
+      amount: amountPerPerson
+    }));
+
+    if (isYouOwe) {
+      setPeopleYouOwe(updatedPeople);
+      updateTotals(updatedPeople, peopleWhoOweYou);
+    } else {
+      setPeopleWhoOweYou(updatedPeople);
+      updateTotals(peopleYouOwe, updatedPeople);
+    }
+
+    return updatedPeople;
+  };
+
+  const handleEquallyToggleYouOwe = (value: string) => {
+    setEquallyYouOwe(value);
+    if (value === 'equally') {
+      distributeEqually(amountYouOweTotal, peopleYouOwe, true);
+    }
+  };
+
+  const handleEquallyToggleOwedToYou = (value: string) => {
+    setEquallyOwedToYou(value);
+    if (value === 'equally') {
+      distributeEqually(amountOwedToYouTotal, peopleWhoOweYou, false);
+    }
+  };
+
+  const handleAmountYouOweTotalChange = (amount: number) => {
+    setAmountYouOweTotal(amount);
+    if (equallyYouOwe === 'equally') {
+      distributeEqually(amount, peopleYouOwe, true);
+    }
+  };
+
+  const handleAmountOwedToYouTotalChange = (amount: number) => {
+    setAmountOwedToYouTotal(amount);
+    if (equallyOwedToYou === 'equally') {
+      distributeEqually(amount, peopleWhoOweYou, false);
+    }
   };
 
   const handleAddPersonYouOwe = () => {
@@ -78,6 +130,8 @@ const SplitAmountSection = ({ onAmountYouOweChange, onAmountOwedToYouChange }: S
     );
     setPeopleYouOwe(newList);
     updateTotals(newList, peopleWhoOweYou);
+    // Reset equally toggle when manual changes are made
+    setEquallyYouOwe('');
   };
 
   const handleAmountChangeOwedToYou = (personId: string, amount: number) => {
@@ -86,6 +140,8 @@ const SplitAmountSection = ({ onAmountYouOweChange, onAmountOwedToYouChange }: S
     );
     setPeopleWhoOweYou(newList);
     updateTotals(peopleYouOwe, newList);
+    // Reset equally toggle when manual changes are made
+    setEquallyOwedToYou('');
   };
 
   const getInitials = (name: string) => {
@@ -105,7 +161,26 @@ const SplitAmountSection = ({ onAmountYouOweChange, onAmountOwedToYouChange }: S
       <div className="space-y-6">
         {/* Amount You Owe Section */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium text-red-700">Amount You Owe (AP)</Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium text-red-700">Amount You Owe (AP)</Label>
+            <ToggleGroup type="single" value={equallyYouOwe} onValueChange={handleEquallyToggleYouOwe}>
+              <ToggleGroupItem value="equally" className="text-xs px-3 py-1">
+                Equally
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+          
+          <div className="relative">
+            <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">₫</span>
+            <Input
+              type="number"
+              value={amountYouOweTotal.toFixed(2)}
+              onChange={(e) => handleAmountYouOweTotalChange(parseFloat(e.target.value) || 0)}
+              className="pl-6 bg-white border-red-300 focus:border-red-500 focus:ring-red-500"
+              step="0.01"
+              placeholder="0.00"
+            />
+          </div>
           
           {peopleYouOwe.map((person) => (
             <div key={person.id} className="flex items-center space-x-3 p-2 bg-white rounded-lg border border-red-200">
@@ -161,7 +236,26 @@ const SplitAmountSection = ({ onAmountYouOweChange, onAmountOwedToYouChange }: S
 
         {/* Amount Owed to You Section */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium text-green-700">Amount Owed to You (AR)</Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium text-green-700">Amount Owed to You (AR)</Label>
+            <ToggleGroup type="single" value={equallyOwedToYou} onValueChange={handleEquallyToggleOwedToYou}>
+              <ToggleGroupItem value="equally" className="text-xs px-3 py-1">
+                Equally
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+          
+          <div className="relative">
+            <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">₫</span>
+            <Input
+              type="number"
+              value={amountOwedToYouTotal.toFixed(2)}
+              onChange={(e) => handleAmountOwedToYouTotalChange(parseFloat(e.target.value) || 0)}
+              className="pl-6 bg-white border-green-300 focus:border-green-500 focus:ring-green-500"
+              step="0.01"
+              placeholder="0.00"
+            />
+          </div>
           
           {peopleWhoOweYou.map((person) => (
             <div key={person.id} className="flex items-center space-x-3 p-2 bg-white rounded-lg border border-green-200">
