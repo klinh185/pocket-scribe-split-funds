@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,8 +33,14 @@ const SplitAmountSection = ({ onAmountYouOweChange, onAmountOwedToYouChange }: S
   };
 
   const updateTotals = (newPeopleYouOwe: Person[], newPeopleWhoOweYou: Person[]) => {
-    onAmountYouOweChange(calculateTotal(newPeopleYouOwe));
-    onAmountOwedToYouChange(calculateTotal(newPeopleWhoOweYou));
+    const youOweTotal = calculateTotal(newPeopleYouOwe);
+    const owedToYouTotal = calculateTotal(newPeopleWhoOweYou);
+    
+    setAmountYouOweTotal(youOweTotal);
+    setAmountOwedToYouTotal(owedToYouTotal);
+    
+    onAmountYouOweChange(youOweTotal);
+    onAmountOwedToYouChange(owedToYouTotal);
   };
 
   const distributeEqually = (totalAmount: number, people: Person[], isYouOwe: boolean) => {
@@ -89,12 +96,17 @@ const SplitAmountSection = ({ onAmountYouOweChange, onAmountOwedToYouChange }: S
       const newPerson: Person = {
         id: Date.now().toString(),
         name: newPersonNameYouOwe.trim(),
-        amount: 0
+        amount: equallyYouOwe === 'equally' ? amountYouOweTotal / (peopleYouOwe.length + 1) : 0
       };
       const newList = [...peopleYouOwe, newPerson];
       setPeopleYouOwe(newList);
       setNewPersonNameYouOwe('');
-      updateTotals(newList, peopleWhoOweYou);
+      
+      if (equallyYouOwe === 'equally') {
+        distributeEqually(amountYouOweTotal, newList, true);
+      } else {
+        updateTotals(newList, peopleWhoOweYou);
+      }
     }
   };
 
@@ -103,25 +115,40 @@ const SplitAmountSection = ({ onAmountYouOweChange, onAmountOwedToYouChange }: S
       const newPerson: Person = {
         id: Date.now().toString(),
         name: newPersonNameOwedToYou.trim(),
-        amount: 0
+        amount: equallyOwedToYou === 'equally' ? amountOwedToYouTotal / (peopleWhoOweYou.length + 1) : 0
       };
       const newList = [...peopleWhoOweYou, newPerson];
       setPeopleWhoOweYou(newList);
       setNewPersonNameOwedToYou('');
-      updateTotals(peopleYouOwe, newList);
+      
+      if (equallyOwedToYou === 'equally') {
+        distributeEqually(amountOwedToYouTotal, newList, false);
+      } else {
+        updateTotals(peopleYouOwe, newList);
+      }
     }
   };
 
   const handleRemovePersonYouOwe = (personId: string) => {
     const newList = peopleYouOwe.filter(person => person.id !== personId);
     setPeopleYouOwe(newList);
-    updateTotals(newList, peopleWhoOweYou);
+    
+    if (equallyYouOwe === 'equally' && newList.length > 0) {
+      distributeEqually(amountYouOweTotal, newList, true);
+    } else {
+      updateTotals(newList, peopleWhoOweYou);
+    }
   };
 
   const handleRemovePersonOwedToYou = (personId: string) => {
     const newList = peopleWhoOweYou.filter(person => person.id !== personId);
     setPeopleWhoOweYou(newList);
-    updateTotals(peopleYouOwe, newList);
+    
+    if (equallyOwedToYou === 'equally' && newList.length > 0) {
+      distributeEqually(amountOwedToYouTotal, newList, false);
+    } else {
+      updateTotals(peopleYouOwe, newList);
+    }
   };
 
   const handleAmountChangeYouOwe = (personId: string, amount: number) => {
@@ -200,6 +227,7 @@ const SplitAmountSection = ({ onAmountYouOweChange, onAmountOwedToYouChange }: S
                   onChange={(e) => handleAmountChangeYouOwe(person.id, parseFloat(e.target.value) || 0)}
                   className="pl-6 text-xs h-8 bg-gray-50 border-gray-300"
                   step="0.01"
+                  disabled={equallyYouOwe === 'equally'}
                 />
               </div>
               
@@ -275,6 +303,7 @@ const SplitAmountSection = ({ onAmountYouOweChange, onAmountOwedToYouChange }: S
                   onChange={(e) => handleAmountChangeOwedToYou(person.id, parseFloat(e.target.value) || 0)}
                   className="pl-6 text-xs h-8 bg-gray-50 border-gray-300"
                   step="0.01"
+                  disabled={equallyOwedToYou === 'equally'}
                 />
               </div>
               

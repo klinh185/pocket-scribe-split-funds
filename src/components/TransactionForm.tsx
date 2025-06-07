@@ -13,7 +13,8 @@ const TransactionForm = () => {
   const [cashTransaction, setCashTransaction] = useState('');
   const [category, setCategory] = useState('');
   const [savingFlow, setSavingFlow] = useState('');
-  const [repaymentParty, setRepaymentParty] = useState('');
+  const [fromPayer, setFromPayer] = useState('');
+  const [toRecipient, setToRecipient] = useState('');
   const [amountYouOwe, setAmountYouOwe] = useState(0);
   const [amountOwedToYou, setAmountOwedToYou] = useState(0);
 
@@ -25,7 +26,8 @@ const TransactionForm = () => {
       amountYouOwe,
       amountOwedToYou,
       savingFlow,
-      repaymentParty
+      fromPayer,
+      toRecipient
     });
   };
 
@@ -37,8 +39,6 @@ const TransactionForm = () => {
         return ['Food', 'Utilities', 'Transport', 'Entertainment', 'Healthcare', 'Shopping'];
       case 'Saving':
         return ['Emergency Fund', 'Investment', 'Vacation', 'Education', 'Other'];
-      case 'Repayment':
-        return ['Loan', 'Credit Card', 'Personal Debt', 'Other'];
       default:
         return [];
     }
@@ -53,6 +53,8 @@ const TransactionForm = () => {
       return cash - youOwe + owedToYou;
     } else if (transactionType === 'Expense') {
       return cash + youOwe - owedToYou;
+    } else if (transactionType === 'Repayment') {
+      return 0;
     }
     return cash;
   };
@@ -62,50 +64,77 @@ const TransactionForm = () => {
 
     return (
       <div className="space-y-4 animate-fade-in">
-        <div>
-          <Label htmlFor="category" className="text-sm font-medium text-gray-700">
-            {transactionType === 'Saving' ? 'Saving Category' : 
-             transactionType === 'Repayment' ? 'Repayment Category' : 'Category'}
-          </Label>
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="mt-1 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-              <SelectValue placeholder="Select category..." />
-            </SelectTrigger>
-            <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-              {getCategoryOptions().map((option) => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {transactionType === 'Saving' && (
+        {(transactionType === 'Income' || transactionType === 'Expense') && (
           <div>
-            <Label htmlFor="saving-flow" className="text-sm font-medium text-gray-700">Flow</Label>
-            <Select value={savingFlow} onValueChange={setSavingFlow}>
+            <Label htmlFor="category" className="text-sm font-medium text-gray-700">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
               <SelectTrigger className="mt-1 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                <SelectValue placeholder="Select flow..." />
+                <SelectValue placeholder="Select category..." />
               </SelectTrigger>
               <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-                <SelectItem value="cash-in">Cash In</SelectItem>
-                <SelectItem value="cash-out">Cash Out</SelectItem>
+                {getCategoryOptions().map((option) => (
+                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         )}
 
+        {transactionType === 'Saving' && (
+          <>
+            <div>
+              <Label htmlFor="category" className="text-sm font-medium text-gray-700">Saving Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="mt-1 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                  <SelectValue placeholder="Select category..." />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                  {getCategoryOptions().map((option) => (
+                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="saving-flow" className="text-sm font-medium text-gray-700">Flow</Label>
+              <Select value={savingFlow} onValueChange={setSavingFlow}>
+                <SelectTrigger className="mt-1 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                  <SelectValue placeholder="Select flow..." />
+                </SelectTrigger>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+                  <SelectItem value="cash-in">Cash In</SelectItem>
+                  <SelectItem value="cash-out">Cash Out</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
+
         {transactionType === 'Repayment' && (
-          <div>
-            <Label htmlFor="repayment-party" className="text-sm font-medium text-gray-700">Party Involved</Label>
-            <Input
-              id="repayment-party"
-              type="text"
-              placeholder="Enter party name..."
-              value={repaymentParty}
-              onChange={(e) => setRepaymentParty(e.target.value)}
-              className="mt-1 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+          <>
+            <div>
+              <Label htmlFor="from-payer" className="text-sm font-medium text-gray-700">From</Label>
+              <Input
+                id="from-payer"
+                type="text"
+                placeholder="Enter payer name..."
+                value={fromPayer}
+                onChange={(e) => setFromPayer(e.target.value)}
+                className="mt-1 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <Label htmlFor="to-recipient" className="text-sm font-medium text-gray-700">To</Label>
+              <Input
+                id="to-recipient"
+                type="text"
+                placeholder="Enter recipient name..."
+                value={toRecipient}
+                onChange={(e) => setToRecipient(e.target.value)}
+                className="mt-1 bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+          </>
         )}
 
         {(transactionType === 'Expense' || transactionType === 'Income') && (
@@ -133,10 +162,17 @@ const TransactionForm = () => {
         
         <div className="mt-3 text-sm text-gray-600">
           <p className="font-medium mb-1">What is this?</p>
-          <p className="text-xs leading-relaxed">
-            This is your Personal Tracked Amount – the part of this transaction that actually affects your budget, 
-            excluding shared debts and loans. This number will be recorded in your Actual Budget.
-          </p>
+          {transactionType === 'Repayment' ? (
+            <p className="text-xs leading-relaxed">
+              This transaction is a repayment – it only reflects a change in cash flow between parties, 
+              not a new income or expense to record in your budget.
+            </p>
+          ) : (
+            <p className="text-xs leading-relaxed">
+              This is your Personal Tracked Amount – the part of this transaction that actually affects your budget, 
+              excluding shared debts and loans. This number will be recorded in your Actual Budget.
+            </p>
+          )}
         </div>
       </div>
     );
