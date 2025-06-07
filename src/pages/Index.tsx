@@ -1,11 +1,22 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useState } from 'react';
+import TransactionForm from '@/components/TransactionForm';
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+      <div className="max-w-md mx-auto">
+        <div className="bg-white shadow-lg min-h-screen">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4">
+            <h1 className="text-xl font-semibold text-center">Personal Finance</h1>
+          </div>
+          
+          {/* Main Content */}
+          <div className="p-4">
+            <TransactionForm />
+          </div>
+        </div>
       </div>
     </div>
   );
